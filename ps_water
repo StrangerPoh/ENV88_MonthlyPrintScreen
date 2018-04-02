@@ -1,0 +1,87 @@
+import time
+import datetime
+import numpy as np
+import os
+from PIL import Image
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.common.by import By
+
+print("++++++++++++++++++++++++++++++++++++++++++++++++++"
+      "\nENV 88 Print screen \t- \tVersion 1.0"
+      "\nCreated by \t\t- \tPoh Chun Sen "
+      "\nPlease do not edit without permission"
+      "\n++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+# Variable
+loginURL = "http://emonitoring-system.com/auth/login"
+windowWidth = 5400
+windowHeight = 1900
+now = datetime.datetime.now()
+endMonth = now.month
+startMonth = now.month-1 if now.month > 1 else 12
+endYear = now.year
+startYear = now.year-1 if now.month == 1 else now.year
+customDateURL = "/water/{}-0{}-01T00:00:00+08:00/{}-0{}-01T00:00:00+08:00".format(startYear,
+                                                                                startMonth,
+                                                                                endYear,
+                                                                                endMonth)
+root_DIR = os.path.dirname(os.path.abspath(__file__))
+stationList = np.genfromtxt("Misc/ReadableFile/stationlist.txt", dtype=str)
+
+
+def web_login(username, password):
+    print("Website Login")
+    driver.get(loginURL)
+    driver.set_window_size(windowWidth, windowHeight)
+    username_elem = driver.find_element_by_name("username")
+    username_elem.send_keys(username)
+    password_elem = driver.find_element_by_name("password")
+    password_elem.send_keys(password)
+    login_attempt = driver.find_element_by_xpath("//*[@type='submit']")
+    login_attempt.submit()
+    time.sleep(1)
+    print("="*50)
+
+
+def printscreen(station):
+    print("Taking {} Screenshot".format(station.replace("-", " ").title()))
+    stationurl = "http://emonitoring-system.com/station/{}{}".format(station, customDateURL)
+    print("Loading Graph...")
+    driver.get(stationurl)
+    WebDriverWait(driver, 20).until(ec.visibility_of_all_elements_located((By.ID, "highcharts-12")))
+    time.sleep(2)
+    driver.save_screenshot("Misc/image_water/{}.png".format(station))
+    print("="*50)
+
+
+def cropimage(station):
+    if station not in ("bedok-wetwell", "bishan-park-1", "bishan-park-2", "geylang-river-dunman-road",
+                       "geylang-river-tanjong-rhu-road", "pandan-canal"):
+        img = Image.open("Misc/image_water/{}.png".format(station))
+        width, height = img.size[0], img.size[1]
+        img.crop((0, 400, width, height-250)).save("Misc/image_water/{}.png".format(station))
+    else:
+        img = Image.open("Misc/image_water/{}.png".format(station))
+        width, height = img.size[0], img.size[1]
+        img.crop((0, 400, width, height-250)).save("Misc/image_water/{}.png".format(station))
+
+
+driver = webdriver.PhantomJS("Misc/phantomjs-2.1.1-windows/bin/phantomjs.exe")
+web_login("username", "password")
+print(customDateURL)
+for name in stationList:
+    printscreen(name)
+    cropimage(name)
+while True:
+    accept = input("Please if images acceptable (Y/N) - ").capitalize()
+    if accept == 'N':
+        print(stationList)
+        redoStation = input("Please select station from above - ")
+        print("="*50)
+        printscreen(redoStation)
+        cropimage(redoStation)
+    if accept == 'Y':
+        break
+driver.quit()
