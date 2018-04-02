@@ -1,0 +1,45 @@
+from docx import Document
+from docx.shared import Inches
+import numpy as np
+import glob
+
+
+waterImages = glob.glob("Misc/image_water/*.png")
+weatherImages = glob.glob("Misc/image_weather/*.png")
+waterList = np.genfromtxt("Misc/ReadableFile/stationlist.txt", dtype=str)
+weatherList = np.genfromtxt("Misc/ReadableFile/weatherlist.txt", dtype=str)
+document = Document("Misc/ReadableFile/Water Template.docx")
+document1 = Document("Misc/ReadableFile/Weather Template.docx")
+
+
+def water_to_report(screenshot):
+    station_name = screenshot.split("\\")[1].replace("-", " ").replace(".png", "").title()
+    print("Appending {} to Report".format(station_name))
+    print("=" * 50)
+    document.add_paragraph().add_run().add_text('Print screen of monthly graph for station: {}'.format(station_name))
+    document.add_picture(screenshot, width=Inches(9.68), height=Inches(5.20))
+    if station_name != "Yishun Pond":
+        document.add_page_break()
+        document.add_paragraph()
+
+
+def weather_to_report(screenshot):
+    station_name = screenshot.split("\\")[1].replace("-", " ").replace(".png", "").title()
+    print("Appending {} to Report".format(station_name))
+    print("=" * 50)
+    document1.add_paragraph().add_run().add_text('Print screen of monthly graph for station: {}'.format(station_name))
+    document1.add_picture(screenshot, width=Inches(9.68), height=Inches(5.20))
+    if station_name != "Upper Peirce":
+        document1.add_page_break()
+        document1.add_paragraph()
+
+
+for image in waterImages:
+    water_to_report(image)
+document.save("Report/" + 'WaterReport.docx')
+print("Water Report Done")
+
+for image in weatherImages:
+    weather_to_report(image)
+document1.save("Report/" + 'WeatherReport.docx')
+print("Weather Report Done")
